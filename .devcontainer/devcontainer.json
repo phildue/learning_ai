@@ -1,6 +1,9 @@
 // See https://aka.ms/vscode-remote/devcontainer.json for format details.
 {
 	"dockerFile": "../Dockerfile",
+	"build": {
+		"target": "dev"
+	},
 	"workspaceMount": "source=${localWorkspaceFolder}/,target=/home/ai/ai,type=bind",
 	"workspaceFolder": "/home/ai/ai",
 	"remoteUser": "ai",
