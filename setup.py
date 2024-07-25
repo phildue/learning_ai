@@ -27,7 +27,12 @@ setup(
     packages=['ai'],
     include_package_data=True,
     python_requires=">=3.7",
-    install_requires=['numpy', 'torch', 'torchvision','opencv-python','pandas'],
+    install_requires=['numpy',
+                      'torch',
+                      'torchvision',
+                      'opencv-python',
+                      'pandas',
+                      'tensorboard'],
     license=about['__license__'],
     zip_safe=False,
     entry_points={
