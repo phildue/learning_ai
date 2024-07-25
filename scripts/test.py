@@ -14,7 +14,7 @@ classes = ('plane', 'car', 'bird', 'cat',
 num_classes = len(classes)
 experiment_name = 'epoch-20-lr-0.001000-bs-64'
 data_path = './data/'
-model_path = f'{data_path}/models/cnn/{experiment_name}'
+model_path = f'./data/models/cnn/epoch-20-lr-0.000100-bs-64-checkpoint-epoch-20-lr-0.001000-bs-64/checkpoint_best'
 # Device will determine whether to run the training on GPU or CPU.
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
