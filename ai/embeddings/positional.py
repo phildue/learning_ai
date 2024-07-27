@@ -5,12 +5,14 @@ import numpy as np
 def get_positional_embeddings(sequence_length, d):
     """Returns positional embedding based on sequence length (number of tokens) and d (dimensionality) of each token.
     """
-    result = torch.ones(sequence_length, d)
-    for i in range(sequence_length):
-        for j in range(d):
-            result[i][j] = np.sin(i / (10000 ** (j / d))) if j % 2 == 0 else np.cos(i / (10000 ** ((j - 1) / d)))
-    return result
-
+    i = np.arange(sequence_length)[:, np.newaxis]
+    j = np.arange(d)
+    exponent = j / d
+    m = 10000
+    denominator = m ** exponent
+    
+    return np.where(j % 2 == 0, np.sin(i / denominator), np.cos(i / (m ** ((j - 1) / d))))
+    
 
 if __name__ == "__main__":
   import matplotlib.pyplot as plt

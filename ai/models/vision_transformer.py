@@ -1,13 +1,13 @@
 import torch.nn as nn
 import torch
 import numpy as np
-from ai.positional_embedding import get_positional_embeddings
-from ai.multi_headed_self_attention import MyViTBlock
+from ai.embeddings.positional import get_positional_embeddings
+from ai.layers.multi_headed_self_attention import VisionTransformerBlock
 
-class MyViT(nn.Module):
-  def __init__(self, chw=(1, 28, 28), n_patches=7, hidden_d = 8, n_blocks=2, n_heads=2, out_d=10):
+class VisionTransformer(nn.Module):
+  def __init__(self, chw=(1, 28, 28), n_patches=7, hidden_d = 8, n_blocks=2, n_heads=2, out_d=10, mlp_dim=64):
     # Super constructor
-    super(MyViT, self).__init__()
+    super(VisionTransformer, self).__init__()
 
     # Attributes
     self.chw = chw # (C, H, W)
@@ -29,7 +29,7 @@ class MyViT(nn.Module):
     self.pos_embed.requires_grad = False
 
     # 4) Transformer encoder blocks
-    self.blocks = nn.ModuleList([MyViTBlock(hidden_d, n_heads) for _ in range(n_blocks)])
+    self.blocks = nn.ModuleList([VisionTransformerBlock(hidden_d, n_heads, mlp_dim) for _ in range(n_blocks)])
 
     # 5) Classification MLPk
     self.mlp = nn.Sequential(
@@ -45,7 +45,7 @@ class MyViT(nn.Module):
     tokens = torch.stack([torch.vstack((self.class_token, tokens[i])) for i in range(len(tokens))])
 
     # Adding positional embedding
-    pos_embed = self.pos_embed.repeat(len(tokens), 1, 1) 
+    pos_embed = self.pos_embed.repeat(tokens.shape[0], 1, 1) 
     out = tokens + pos_embed #we really just add this? Yes it avoids additional dimensionality and having to learn the relations between positional and semantic data
 
     # Transformer Blocks
@@ -63,7 +63,7 @@ class MyViT(nn.Module):
     n_patches = self.n_patches
     assert h == w, "Patchify method is implemented for square images only"
 
-    patches = torch.zeros(n, n_patches ** 2, h * w * c // n_patches ** 2)
+    patches = torch.zeros(n, n_patches ** 2, h * w * c // n_patches ** 2).to(images.device, float)
     patch_size = h // n_patches
 
     for idx, image in enumerate(images):
@@ -76,7 +76,7 @@ class MyViT(nn.Module):
 
 if __name__ == '__main__':
     # Current model
-    model = MyViT(
+    model = VisionTransformer(
         chw=(3, 28, 28),
         n_patches=7
     )
