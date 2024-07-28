@@ -9,4 +9,8 @@ height: 32
 width: 32
 checkpoint: ""
 use_wandb: True
-data_path: ./data
+data_path: /mnt/dataset/pytorch
+seed: 666
+hydra:
+  run:
+    dir: ./outputs/${now:%Y-%m-%d}/${model_name}-${dataset_name}-${now:%H-%M-%S}

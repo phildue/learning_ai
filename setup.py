@@ -32,7 +32,10 @@ setup(
                       'torchvision',
                       'opencv-python',
                       'pandas',
-                      'tensorboard'],
+                      'tensorboard',
+                      'wandb',
+                      'ipykernel'
+                      ],
     license=about['__license__'],
     zip_safe=False,
     entry_points={
