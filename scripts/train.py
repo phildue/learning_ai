@@ -80,7 +80,7 @@ def main(cfg : DictConfig) -> None:
 
     experiment = Tracker('image_classification', 
                          experiment_config=OmegaConf.to_object(cfg),
-                         experiment_name=cfg.experiment_name, 
+                         experiment_name=f'{cfg.experiment_prefix}_{cfg.model_name}_{cfg.dataset_name}', 
                          data_path=cfg.data_path,
                          experiment_path=experiment_path,
                          dataset=dataset,

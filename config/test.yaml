@@ -1,12 +1,11 @@
-experiment_prefix: train
+experiment_prefix: test
 
-batch_size: 128
-learning_rate: 0.001
-num_epochs: 50
-model_name: vit
+model_name: vit_b_16_pretrained
 dataset_name: cifar10
-height: 32
-width: 32
+height: 224
+width: 224
+batch_size: 128
+
 checkpoint: ""
 use_wandb: True
 data_path: /mnt/dataset/pytorch
