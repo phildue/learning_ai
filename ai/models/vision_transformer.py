@@ -63,16 +63,14 @@ class VisionTransformer(nn.Module):
     n_patches = self.n_patches
     assert h == w, "Patchify method is implemented for square images only"
 
-    patches = torch.zeros(n, n_patches ** 2, h * w * c // n_patches ** 2).to(images.device, float)
     patch_size = h // n_patches
 
-    for idx, image in enumerate(images):
-        for i in range(n_patches):
-            for j in range(n_patches):
-                patch = image[:, i * patch_size: (i + 1) * patch_size, j * patch_size: (j + 1) * patch_size]
-                patches[idx, i * n_patches + j] = patch.flatten()
+    # Reshape and permute the image tensor to get patches
+    patches = images.unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
+    patches = patches.permute(0, 2, 3, 1, 4, 5).contiguous()
+    patches = patches.view(n, n_patches * n_patches, c * patch_size * patch_size)
+
     return patches
-  
 
 if __name__ == '__main__':
     # Current model
