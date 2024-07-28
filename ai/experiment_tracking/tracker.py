@@ -7,17 +7,18 @@ import numpy as np
 import os
 import random
 class Tracker:
-    def __init__(self, project_name:str, experiment_config:Dict, experiment_path, data_path, dataset, model, optimizer, use_wandb=False):
+    def __init__(self, project_name:str, experiment_name:str, experiment_config:Dict, experiment_path, data_path, dataset, model, optimizer, use_wandb=False):
 
         if use_wandb:
             self.run = wandb.init(
                 project=project_name,
+                name=experiment_name,
                 config=experiment_config
             )
         self.experiment_config = experiment_config
         self.model_name = experiment_config['model_name']
         self.dataset_name = experiment_config['dataset_name']
-        self.experiment_name = ''#TODO
+        self.experiment_name = experiment_name
         self.experiment_path = experiment_path       
         self.use_wandb = use_wandb
         os.makedirs(data_path, exist_ok=True)

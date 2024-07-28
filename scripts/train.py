@@ -4,7 +4,8 @@ import torch.nn as nn
 import numpy as np
 from tqdm import tqdm
 import random
-
+import hydra
+from omegaconf import DictConfig, OmegaConf
 from ai.experiment_tracking.tracker import Tracker
 from ai.datasets.cifar10 import Cifar10
 from ai.models import models
@@ -14,7 +15,8 @@ torch.manual_seed(SEED)
 random.seed(10)
 
 
-def train(data_loader: torch.utils.data.DataLoader, criterion, optimizer:torch.optim.Optimizer):
+def train(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, criterion, optimizer:torch.optim.Optimizer):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     for i, (images, labels) in enumerate(tqdm(data_loader,desc='Training')):  
             images = images.to(device)
             labels = labels.to(device)
@@ -28,7 +30,8 @@ def train(data_loader: torch.utils.data.DataLoader, criterion, optimizer:torch.o
     return loss
 
 
-def evaluate(data_loader: torch.utils.data.DataLoader, model: torch.nn.Module, criterion):
+def evaluate(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, criterion):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     with torch.no_grad():
         correct = 0
         total = 0
@@ -47,50 +50,55 @@ def evaluate(data_loader: torch.utils.data.DataLoader, model: torch.nn.Module, c
     return correct/total, loss_val/len(data_loader), labels_all
         
 
-if __name__ == '__main__':
-    batch_size = 128
-    learning_rate = 0.0001
-    num_epochs = 100
-    model_name = 'cnn'
-    dataset_name = 'cifar10'
-    input_shape = 32,32
-    data_path = './data/'
+
+@hydra.main(version_base=None, config_path="../config", config_name="train")
+def main(cfg : DictConfig) -> None:
+    print(f'Running training with: {OmegaConf.to_yaml(cfg)}')
 
     datasets = {
         'cifar10': Cifar10
     }
-    dataset = datasets['cifar10'](shape=input_shape, batch_size=batch_size, data_path=data_path)
+    dataset = datasets['cifar10'](shape=(cfg.height, cfg.width), batch_size=cfg.batch_size, data_path=cfg.data_path)
     
+    experiment_path = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
 
-    
-
-    checkpoint = None#f'epoch-20-lr-{0.001:.6f}-bs-{batch_size}/checkpoint_best.pt'
-    experiment_name = f'epoch-{num_epochs}-lr-{learning_rate:.6f}-bs-{batch_size}'
-    experiment_path = f'{data_path}/models/{model_name}_{experiment_name}'
-    params =  {k: eval(k) for k in ('batch_size', 'learning_rate', 'num_epochs','checkpoint','experiment_path','model_name','dataset_name')}
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Selected device: [{device}]')
 
-    model = models.load(model_name, shape_in=input_shape, shape_out=len(dataset.classes))
+    model = models.load(cfg.model_name, shape_in=(cfg.height, cfg.width), shape_out=len(dataset.classes))
 
     criterion = nn.CrossEntropyLoss()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  
+    optimizer = torch.optim.Adam(model.parameters(), lr=cfg.learning_rate)  
 
-    if checkpoint is not None:
-        checkpoint = torch.load(f'{data_path}/models/{model_name}/{checkpoint}')
+    if len(cfg.checkpoint) > 1:
+        checkpoint = torch.load(cfg.checkpoint)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         epoch = checkpoint['epoch']
         loss = checkpoint['loss']
 
-    experiment = Tracker('image_classification', experiment_config=params, data_path=data_path,experiment_path=experiment_path,dataset=dataset,model=model,optimizer=optimizer, use_wandb=True)
+    experiment = Tracker('image_classification', 
+                         experiment_config=OmegaConf.to_object(cfg),
+                         experiment_name=cfg.experiment_name, 
+                         data_path=cfg.data_path,
+                         experiment_path=experiment_path,
+                         dataset=dataset,
+                         model=model,
+                         optimizer=optimizer,
+                         use_wandb=cfg.use_wandb)
         
 
-    for epoch in range(num_epochs):
+    for epoch in range(cfg.num_epochs):
         
-        loss_train = train(dataset.train_loader, criterion, optimizer)
+        loss_train = train(model, dataset.train_loader, criterion, optimizer)
 
-        accuracy_val, loss_val, labels_pred = evaluate(dataset.test_loader, model, criterion)
+        accuracy_val, loss_val, labels_pred = evaluate(model, dataset.test_loader, criterion)
 
         experiment.log(epoch, scalars={'loss_val':loss_val,'loss_train':loss_train, 'accuracy_val':accuracy_val}, labels_pred=labels_pred)
+
+
+if __name__ == "__main__":
+    main()
+     
+
