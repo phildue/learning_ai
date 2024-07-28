@@ -34,6 +34,7 @@ setup(
                       'pandas',
                       'tensorboard',
                       'wandb',
+                      'hydra-core',
                       'ipykernel'
                       ],
     license=about['__license__'],
