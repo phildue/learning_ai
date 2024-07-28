@@ -15,3 +15,5 @@ docs/build_*
 # misc
 .DS_Store
 data/
+
+wandb/
