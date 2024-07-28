@@ -1,0 +1,6 @@
+name: vit
+n_patches: 2
+n_blocks: 2
+n_heads: 2
+hidden_dimension: 512
+mlp_dim: 128

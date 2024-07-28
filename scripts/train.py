@@ -53,19 +53,18 @@ def evaluate(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, c
 
 @hydra.main(version_base=None, config_path="../config", config_name="train")
 def main(cfg : DictConfig) -> None:
-    print(f'Running training with: {OmegaConf.to_yaml(cfg)}')
-
+    experiment_path = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    print(f'Running training with: {OmegaConf.to_yaml(cfg)} in [{experiment_path}]')
     datasets = {
         'cifar10': Cifar10
     }
     dataset = datasets['cifar10'](shape=(cfg.height, cfg.width), batch_size=cfg.batch_size, data_path=cfg.data_path)
     
-    experiment_path = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'Selected device: [{device}]')
 
-    model = models.load(cfg.model_name, shape_in=(cfg.height, cfg.width), shape_out=len(dataset.classes))
+    model = models.load(cfg.model.name, shape_in=(cfg.height, cfg.width), shape_out=len(dataset.classes),config=OmegaConf.to_object(cfg.model))
 
     criterion = nn.CrossEntropyLoss()
 
@@ -80,7 +79,7 @@ def main(cfg : DictConfig) -> None:
 
     experiment = Tracker('image_classification', 
                          experiment_config=OmegaConf.to_object(cfg),
-                         experiment_name=f'{cfg.experiment_prefix}_{cfg.model_name}_{cfg.dataset_name}', 
+                         experiment_name=f'{cfg.experiment_prefix}_{cfg.model.name}_{cfg.dataset_name}', 
                          data_path=cfg.data_path,
                          experiment_path=experiment_path,
                          dataset=dataset,

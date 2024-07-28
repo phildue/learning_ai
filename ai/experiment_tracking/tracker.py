@@ -16,7 +16,7 @@ class Tracker:
                 config=experiment_config
             )
         self.experiment_config = experiment_config
-        self.model_name = experiment_config['model_name']
+        self.model_name = experiment_config['model']['name']
         self.dataset_name = experiment_config['dataset_name']
         self.experiment_name = experiment_name
         self.experiment_path = experiment_path       

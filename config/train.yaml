@@ -3,7 +3,6 @@ experiment_prefix: train
 batch_size: 128
 learning_rate: 0.001
 num_epochs: 50
-model_name: vit
 dataset_name: cifar10
 height: 32
 width: 32
@@ -11,6 +10,8 @@ checkpoint: ""
 use_wandb: True
 data_path: /mnt/dataset/pytorch
 seed: 666
+defaults:
+  - model: vit
 hydra:
   run:
-    dir: ../outputs/${now:%Y-%m-%d}/${model_name}-${dataset_name}-${now:%H-%M-%S}
+    dir: ../outputs/${now:%Y-%m-%d}/${model.name}-${dataset_name}-${now:%H-%M-%S}
