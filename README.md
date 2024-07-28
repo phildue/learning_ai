@@ -5,3 +5,7 @@ Implementation playground for concepts around deep learning and AI, mirroring a 
 ## Results
 
 [Results](https://wandb.ai/phildue/image_classification)
+
+## Run Live
+
+[Colab](https://colab.research.google.com/drive/16Mw_bGE0SRtFCmu0QAbUA5HyA6WUx2Y8?usp=sharing)
