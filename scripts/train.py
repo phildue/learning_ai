@@ -9,10 +9,6 @@ from omegaconf import DictConfig, OmegaConf
 from ai.experiment_tracking.tracker import Tracker
 from ai.datasets.cifar10 import Cifar10
 from ai.models import models
-SEED=666
-np.random.seed(SEED)
-torch.manual_seed(SEED)
-random.seed(10)
 
 
 def train(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, criterion, optimizer:torch.optim.Optimizer):
@@ -55,6 +51,11 @@ def evaluate(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, c
 def main(cfg : DictConfig) -> None:
     experiment_path = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
     print(f'Running training with: {OmegaConf.to_yaml(cfg)} in [{experiment_path}]')
+    np.random.seed(cfg.seed)
+    torch.manual_seed(cfg.seed)
+    random.seed(cfg.seed)
+    torch.set_default_dtype(torch.float64)
+
     datasets = {
         'cifar10': Cifar10
     }

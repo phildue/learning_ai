@@ -4,6 +4,7 @@ import numpy as np
 from ai.embeddings.positional import get_positional_embeddings
 from ai.layers.multi_headed_self_attention import VisionTransformerBlock
 
+
 class VisionTransformer(nn.Module):
   def __init__(self, chw=(1, 28, 28), n_patches=7, hidden_d = 8, n_blocks=2, n_heads=2, out_d=10, mlp_dim=64):
     # Super constructor
@@ -29,7 +30,7 @@ class VisionTransformer(nn.Module):
     self.pos_embed.requires_grad = False
 
     # 4) Transformer encoder blocks
-    self.blocks = nn.ModuleList([VisionTransformerBlock(hidden_d, n_heads, mlp_dim) for _ in range(n_blocks)])
+    self.transformer_blocks = nn.Sequential(*[VisionTransformerBlock(hidden_d, n_heads, mlp_dim) for _ in range(n_blocks)])
 
     # 5) Classification MLPk
     self.mlp = nn.Sequential(
@@ -48,9 +49,7 @@ class VisionTransformer(nn.Module):
     pos_embed = self.pos_embed.repeat(tokens.shape[0], 1, 1) 
     out = tokens + pos_embed #we really just add this? Yes it avoids additional dimensionality and having to learn the relations between positional and semantic data
 
-    # Transformer Blocks
-    for block in self.blocks:
-        out = block(out)
+    out = self.transformer_blocks(out)
 
     # Getting the classification token only
     out = out[:, 0]
@@ -73,6 +72,8 @@ class VisionTransformer(nn.Module):
     return patches
 
 if __name__ == '__main__':
+    torch.set_default_dtype(torch.float64)
+
     # Current model
     model = VisionTransformer(
         chw=(3, 28, 28),

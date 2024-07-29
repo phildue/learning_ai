@@ -1,5 +1,5 @@
 name: vit
-n_patches: 2
+n_patches: 16
 n_blocks: 2
 n_heads: 2
 hidden_dimension: 512
