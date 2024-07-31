@@ -14,7 +14,7 @@ def load(model_name, shape_in, shape_out, config):
                                   hidden_d=config['hidden_dimension'],
                                   n_heads=config['n_heads'], 
                                   mlp_dim=config['mlp_dim'],
-                                  out_d=shape_out),
+                                  dim_out=shape_out),
         'vit_b_16_pretrained': torch_models.vit_b_16(weights=torch_models.ViT_B_16_Weights.DEFAULT)
     }
     model = models[model_name].to(device=device, dtype=float)

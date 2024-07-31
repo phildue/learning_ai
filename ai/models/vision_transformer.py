@@ -6,27 +6,27 @@ from ai.layers.multi_headed_self_attention import VisionTransformerBlock
 
 
 class VisionTransformer(nn.Module):
-  def __init__(self, chw=(1, 28, 28), n_patches=7, hidden_d = 8, n_blocks=2, n_heads=2, out_d=10, mlp_dim=64):
+  def __init__(self, chw=(1, 28, 28), n_patches=7, hidden_d = 8, n_blocks=2, n_heads=2, dim_out=10, mlp_dim=64):
     # Super constructor
     super(VisionTransformer, self).__init__()
 
     # Attributes
     self.chw = chw # (C, H, W)
     self.n_patches = n_patches
-    self.hidden_d = hidden_d
+    self.dim_latent = hidden_d
     assert chw[1] % n_patches == 0, "Input shape not entirely divisible by number of patches"
     assert chw[2] % n_patches == 0, "Input shape not entirely divisible by number of patches"
     self.patch_size = (chw[1] / n_patches, chw[2] / n_patches)
 
     # 1) Linear mapper
     self.input_d = int(chw[0] * self.patch_size[0] * self.patch_size[1])
-    self.linear_mapper = nn.Linear(self.input_d, self.hidden_d)
+    self.linear_mapper = nn.Linear(self.input_d, self.dim_latent)
 
     # 2) Learnable classifiation token
-    self.class_token = nn.Parameter(torch.rand(1, self.hidden_d))
+    self.class_token = nn.Parameter(torch.rand(1, self.dim_latent))
 
     # 3) Positional embedding
-    self.pos_embed = nn.Parameter(torch.tensor(get_positional_embeddings(self.n_patches ** 2 + 1, self.hidden_d)))
+    self.pos_embed = nn.Parameter(torch.tensor(get_positional_embeddings(self.n_patches ** 2 + 1, self.dim_latent)))
     self.pos_embed.requires_grad = False
 
     # 4) Transformer encoder blocks
@@ -34,22 +34,22 @@ class VisionTransformer(nn.Module):
 
     # 5) Classification MLPk
     self.mlp = nn.Sequential(
-        nn.Linear(self.hidden_d, out_d),
+        nn.Linear(self.dim_latent, dim_out),
         nn.Softmax(dim=-1)
     )
 
   def forward(self, images):
-    patches = self.patchify(images)
-    tokens = self.linear_mapper(patches)
+    
 
-    # Adding classification token to the tokens
-    tokens = torch.stack([torch.vstack((self.class_token, tokens[i])) for i in range(len(tokens))])
+    # Eq (1)
+    E = self.patchify(images)
+    x_pE = self.linear_mapper(E)
+    E_pos = self.pos_embed.repeat(x_pE.shape[0], 1, 1) 
 
-    # Adding positional embedding
-    pos_embed = self.pos_embed.repeat(tokens.shape[0], 1, 1) 
-    out = tokens + pos_embed #we really just add this? Yes it avoids additional dimensionality and having to learn the relations between positional and semantic data
+    z_0 = torch.stack([torch.vstack((self.class_token, x_pE[i])) for i in range(len(x_pE))]) + E_pos
 
-    out = self.transformer_blocks(out)
+    
+    out = self.transformer_blocks(z_0)
 
     # Getting the classification token only
     out = out[:, 0]
@@ -58,18 +58,17 @@ class VisionTransformer(nn.Module):
     return out
   
   def patchify(self, images):
-    n, c, h, w = images.shape
-    n_patches = self.n_patches
-    assert h == w, "Patchify method is implemented for square images only"
+    B, C, H, W = images.shape
+    N = self.n_patches
+    assert H == W, "Patchify method is implemented for square images only"
 
-    patch_size = h // n_patches
+    P = H // N
+    # See ViT 3.1 First paragraph
+    x_p = images.unfold(2, P, P).unfold(3, P, P)
+    x_p = x_p.permute(0, 2, 3, 1, 4, 5).contiguous()
+    x_p = x_p.view(B, N * N, C * P * P)
 
-    # Reshape and permute the image tensor to get patches
-    patches = images.unfold(2, patch_size, patch_size).unfold(3, patch_size, patch_size)
-    patches = patches.permute(0, 2, 3, 1, 4, 5).contiguous()
-    patches = patches.view(n, n_patches * n_patches, c * patch_size * patch_size)
-
-    return patches
+    return x_p
 
 if __name__ == '__main__':
     torch.set_default_dtype(torch.float64)

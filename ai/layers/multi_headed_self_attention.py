@@ -24,16 +24,25 @@ class MultiHeadedSelfAttention(nn.Module):
 
         sequences = sequences.view(batch_size, seq_length, self.n_heads, self.dim_head)
 
-        Q = torch.zeros(batch_size, seq_length, self.n_heads, self.dim_head).to(sequences.device)
-        K = torch.zeros(batch_size, seq_length, self.n_heads, self.dim_head).to(sequences.device)
-        V = torch.zeros(batch_size, seq_length, self.n_heads, self.dim_head).to(sequences.device)
+        batch_size, seq_length, n_heads, dim_head = sequences.shape
 
+        # Concatenate weight matrices for all heads
+        W_q = torch.cat([w_q.weight.unsqueeze(0) for w_q in self.w_q], dim=0)  # Shape: [n_heads, dim_head, dim_input]
+        W_k = torch.cat([w_k.weight.unsqueeze(0) for w_k in self.w_k], dim=0)  # Shape: [n_heads, dim_head, dim_input]
+        W_v = torch.cat([w_v.weight.unsqueeze(0) for w_v in self.w_v], dim=0)  # Shape: [n_heads, dim_head, dim_input]
 
-        for head in range(self.n_heads):
-            # apply different weight matrices on input data
-            Q[:, :, head, :] = self.w_q[head](sequences[:, :, head, :])
-            K[:, :, head, :] = self.w_k[head](sequences[:, :, head, :])
-            V[:, :, head, :] = self.w_v[head](sequences[:, :, head, :])
+        # Reshape sequences to shape [batch_size * seq_length, n_heads, dim_head]
+        sequences_reshaped = sequences.view(batch_size * seq_length, n_heads, dim_head)
+
+        # Compute Q, K, V for all heads at once
+        Q = torch.einsum('bnd,ndh->bnh', sequences_reshaped, W_q)
+        K = torch.einsum('bnd,ndh->bnh', sequences_reshaped, W_k)
+        V = torch.einsum('bnd,ndh->bnh', sequences_reshaped, W_v)
+
+        # Reshape back to original shape [batch_size, seq_length, n_heads, dim_head]
+        Q = Q.view(batch_size, seq_length, n_heads, dim_head)
+        K = K.view(batch_size, seq_length, n_heads, dim_head)
+        V = V.view(batch_size, seq_length, n_heads, dim_head)
 
         Q = Q.transpose(1, 2) # queries
         K = K.transpose(1, 2) # keys

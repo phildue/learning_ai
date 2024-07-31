@@ -9,11 +9,11 @@ from omegaconf import DictConfig, OmegaConf
 from ai.experiment_tracking.tracker import Tracker
 from ai.datasets.cifar10 import Cifar10
 from ai.models import models
-
+from rich.progress import track
 
 def train(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, criterion, optimizer:torch.optim.Optimizer):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    for i, (images, labels) in enumerate(tqdm(data_loader,desc='Training')):  
+    for i, (images, labels) in enumerate(track(data_loader,description='Training..')):  
             images = images.to(device)
             labels = labels.to(device)
             
@@ -33,7 +33,7 @@ def evaluate(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, c
         total = 0
         loss_val = 0
         labels_all = []
-        for images, labels in tqdm(data_loader,desc='Testing'):
+        for images, labels in track(data_loader,description='Testing..'):
             images = images.to(device)
             labels = labels.to(device)
             outputs = model(images)
